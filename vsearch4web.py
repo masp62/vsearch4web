@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from DBcm import UseDatabase
+from checker import check_logged_in
+
 import vsearch
 
 app = Flask(__name__)
+app.secret_key = 'YouWillNeverGuess'
 
 
 def log_request(req: 'flask_request', res: str) -> None:
@@ -36,6 +39,7 @@ def entry_page() -> 'html':
 
 
 @app.route('/viewlog')
+@check_logged_in
 def view_the_log() -> 'html':
     content = []
     # with open('vsearch.log') as log:
@@ -53,6 +57,21 @@ def view_the_log() -> 'html':
                            the_title='View log',
                            the_row_titles=titles,
                            the_data=content,)
+
+
+@app.route('/login')
+def login() -> str:
+    session['logged_in'] = True
+    return 'You are now logged in.'
+
+
+@app.route('/logout')
+def logout() -> str:
+    if 'logged_in' in session:
+        session.pop('logged_in')
+        return 'You are now logged out.'
+    else:
+        return 'You are already logged out.'
 
 if __name__ == '__main__':
     app.run(port=5001, debug=True)
