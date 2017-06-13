@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, session
-from DBcm import UseDatabase
+from DBcm import UseDatabase, ConnectionException
 from checker import check_logged_in
 
 import vsearch
@@ -23,7 +23,11 @@ def do_search() -> 'html':
     letters = request.form['letters']
     title = 'Here are your results'
     results = str(vsearch.search4letters(phrase, letters))
-    log_request(request, results)
+
+    try:
+        log_request(request, results)
+    except ConnectionException as e:
+        print("Error logging request:" + str(e))
 
     return render_template('results.html',
                            the_title=title,
@@ -47,10 +51,14 @@ def view_the_log() -> 'html':
     #    content.append([])
     #    for item in line.split('|'):
     #        content[-1].append(escape(item))
-    with UseDatabase('vsearch.db') as cursor:
-        _SQL = """select phrase, letters, remote_addr, user_agent, results from viewlog"""
-        cursor.execute(_SQL)
-        content = cursor.fetchall()
+
+    try:
+        with UseDatabase('vsearch.db') as cursor:
+            _SQL = """select phrase, letters, remote_addr, user_agent, results from viewlog"""
+            cursor.execute(_SQL)
+            content = cursor.fetchall()
+    except ConnectionException as e:
+        print("Error logging request" + str(e))
 
     titles = ('Phrase', 'Letters', 'Remote_addr', 'User_agent', 'Results')
     return render_template('viewlog.html',

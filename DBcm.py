@@ -1,6 +1,10 @@
 import sqlite3
 
 
+class ConnectionException(Exception):
+    pass
+
+
 class UseDatabase:
 
     def __init__(self, db: str):
@@ -8,10 +12,13 @@ class UseDatabase:
         pass
 
     def __enter__(self) -> 'cursor':
-        self.conn = sqlite3.connect(self.database)
-        self.cursor = self.conn.cursor()
+        try:
+            self.conn = sqlite3.connect(self.database)
+            self.cursor = self.conn.cursor()
 
-        return self.cursor
+            return self.cursor
+        except Exception as e:
+            raise ConnectionException(str(e))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cursor.close()
